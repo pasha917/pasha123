@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.7.0",
+    "react-dropzone": "^15.0.0",
+    "react-hot-toast": "^2.6.0",
+    "react-router-dom": "^7.14.0",
+    "recharts": "^3.8.1"
+  }
+}

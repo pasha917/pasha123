@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row gy-4">
+  <div class="col-lg-4">
+    <div class="card card-shadow p-4">
+      <h3>{{ shop.name }}</h3>
+      <p>{{ shop.description }}</p>
+      <p><strong>Rating:</strong> {{ shop.rating }}</p>
+      <span class="badge bg-secondary">Shopkeeper: {{ shop.owner.name }}</span>
+    </div>
+  </div>
+  <div class="col-lg-8">
+    <div class="card card-shadow p-4">
+      <h4>Menu</h4>
+      <form method="post">
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead><tr><th>Dish</th><th>Price</th><th>Qty</th></tr></thead>
+            <tbody>
+              {% for item in shop.items %}
+                <tr>
+                  <td>
+                    <div><strong>{{ item.name }}</strong></div>
+                    <div class="small-note">{{ item.description }}</div>
+                    <div class="review-stars">★ {{ item.rating }}</div>
+                  </td>
+                  <td>₹{{ item.price }}</td>
+                  <td>
+                    <input type="number" name="quantity" min="0" value="0" class="form-control">
+                    <input type="hidden" name="item_id" value="{{ item.id }}">
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Delivery Location</label>
+          <button type="button" class="btn btn-sm btn-outline-primary mb-3" id="use-location-btn">Use my current location</button>
+          <div id="delivery-map" style="height: 280px; border: 1px solid #ced4da; border-radius: .375rem;"></div>
+          <input type="hidden" name="delivery_lat" id="delivery_lat">
+          <input type="hidden" name="delivery_lng" id="delivery_lng">
+          <div class="form-text">Click on the map or use your current location to choose the delivery point.</div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Payment Method</label>
+          <select class="form-select" name="payment_method" id="payment_method" required>
+            <option value="UPI">UPI Payment</option>
+            <option value="Cash on Delivery">Cash on Delivery</option>
+          </select>
+          <div class="form-text">Choose UPI for instant online payment or Cash on Delivery at delivery time.</div>
+        </div>
+        <button id="place-order-btn" class="btn btn-primary w-100">Continue to UPI Payment</button>
+      </form>
+      <script>
+        document.getElementById('payment_method').addEventListener('change', function() {
+          const btn = document.getElementById('place-order-btn');
+          if (this.value === 'UPI') {
+            btn.textContent = 'Continue to UPI Payment';
+          } else {
+            btn.textContent = 'Place Order';
+          }
+        });
+
+        function initMap() {
+          const pickup = { lat: {{ shop.latitude or 28.7041 }}, lng: {{ shop.longitude or 77.1025 }} };
+          const map = new google.maps.Map(document.getElementById('delivery-map'), {
+            center: pickup,
+            zoom: 12
+          });
+          new google.maps.Marker({
+            position: pickup,
+            map: map,
+            title: 'Pickup: {{ shop.name }}'
+          });
+
+          let deliveryMarker = null;
+
+          function setDeliveryLocation(latLng) {
+            const lat = latLng.lat();
+            const lng = latLng.lng();
+            document.getElementById('delivery_lat').value = lat.toFixed(6);
+            document.getElementById('delivery_lng').value = lng.toFixed(6);
+            if (deliveryMarker) {
+              deliveryMarker.setPosition(latLng);
+            } else {
+              deliveryMarker = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                title: 'Delivery location'
+              });
+            }
+          }
+
+          map.addListener('click', function(e) {
+            setDeliveryLocation(e.latLng);
+          });
+
+          document.getElementById('use-location-btn').addEventListener('click', function() {
+            if (!navigator.geolocation) {
+              console.warn('Geolocation is not supported by this browser.');
+              return;
+            }
+            navigator.geolocation.getCurrentPosition(function(position) {
+              const userLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+              map.setCenter(userLocation);
+              map.setZoom(14);
+              setDeliveryLocation(userLocation);
+            }, function() {
+              console.warn('Unable to retrieve current location.');
+            });
+          });
+
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+              const userLocation = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+              map.setCenter(userLocation);
+              map.setZoom(14);
+            }, function() {
+              // Leave the map centered on the shop if current location is unavailable.
+            });
+          }
+        }
+
+      </script>
+      {% if google_maps_api_key %}
+        <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initMap"></script>
+      {% else %}
+        <div class="mt-3">
+          <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d497698.77491618396!2d77.3012613173564!3d12.954459537787022!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae1670c9b44e6d%3A0xf8dfc3e8517e4fe0!2sBengaluru%2C%20Karnataka!5e0!3m2!1sen!2sin!4v1775677955959!5m2!1sen!2sin" width="100%" height="450" style="border:0; min-height:280px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

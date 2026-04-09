@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-4">
+  <h2>Admin Dashboard</h2>
+  <p class="small-note">Monitor all user accounts, shops, and orders from a centralized control panel.</p>
+  <a href="{{ url_for('test_email') }}" class="btn btn-info">Test Email</a>
+</div>
+<div class="row gy-4">
+  <div class="col-lg-6">
+    <div class="card card-shadow p-4">
+      <h4>Users</h4>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Phone</th></tr></thead>
+          <tbody>
+            {% for user in users %}
+              <tr><td>{{ user.name }}</td><td>{{ user.email }}</td><td>{{ user.role }}</td><td>{{ user.phone or '-' }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card card-shadow p-4">
+      <h4>Recent Orders</h4>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead><tr><th>Code</th><th>Shop</th><th>Customer</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for order in orders %}
+              <tr>
+                <td>{{ order.code }}</td>
+                <td>{{ order.shop.name }}</td>
+                <td>{{ order.customer.name }}</td>
+                <td>{{ order.status }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card card-shadow p-4">
+      <h2 class="mb-3">Verify Your Email</h2>
+      <p class="small-note">A 6-digit OTP was sent to <strong>{{ email }}</strong>.</p>
+      <p class="small-note text-muted">Enter the OTP below to complete your account setup.</p>
+      {% if debug_otp %}
+        <div class="alert alert-warning">
+          <strong>Debug OTP:</strong> <strong>{{ debug_otp }}</strong>
+        </div>
+      {% endif %}
+      <form method="post" action="{{ url_for('verify_otp') }}" class="needs-validation" novalidate>
+        <div class="mb-3">
+          <label class="form-label">6-Digit OTP Code</label>
+          <input type="text" class="form-control form-control-lg text-center" name="otp"
+                 placeholder="000000" maxlength="6" pattern="\d{6}" required autocomplete="off"
+                 title="Enter the 6-digit OTP" style="font-size: 1.5em; letter-spacing: 5px;">
+          <div class="invalid-feedback">Please enter the 6-digit OTP.</div>
+          <small class="text-muted">Check your inbox and spam folder.</small>
+        </div>
+        <button type="submit" class="btn btn-primary w-100 mb-2">Verify OTP</button>
+        <a href="{{ url_for('resend_registration_otp') }}" class="btn btn-link w-100">Resend OTP</a>
+        <a href="{{ url_for('register') }}" class="btn btn-outline-secondary w-100 mt-2">Go Back</a>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

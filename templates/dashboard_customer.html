@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="fade-in-up">
+  <div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+      <h1 class="mb-2" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 700;">Welcome back, {{ current_user.name }}</h1>
+      <p class="text-muted mb-0">Your tracking code: <span class="badge bg-primary">{{ current_user.tracking_code }}</span></p>
+    </div>
+    <div class="text-end">
+      <div class="h6 mb-0">Premium Customer</div>
+      <small class="text-muted">Experience the best delivery service</small>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row gy-4 mb-5">
+    <div class="col-md-4">
+      <div class="dashboard-stat text-center">
+        <div class="h2 mb-2" style="color: #667eea;">{{ orders|length }}</div>
+        <div class="text-muted">Total Orders</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="dashboard-stat text-center">
+        <div class="h2 mb-2" style="color: #764ba2;">{{ orders|selectattr('status', 'equalto', 'Delivered')|list|length }}</div>
+        <div class="text-muted">Delivered</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="dashboard-stat text-center">
+        <div class="h2 mb-2" style="color: #f093fb;">₹{{ orders|sum(attribute='total_amount') if orders else 0 }}</div>
+        <div class="text-muted">Total Spent</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row gy-4">
+    <div class="col-lg-8">
+      <div class="card card-shadow p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="mb-0">🍽️ Available Restaurants</h4>
+          <span class="badge bg-primary">{{ shops|length }} restaurants</span>
+        </div>
+        <div class="row gy-3">
+          {% for shop in shops %}
+            <div class="col-md-6">
+              <div class="card h-100 p-3 border-0 shadow-sm order-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h5 class="mb-1">{{ shop.name }}</h5>
+                  <div class="review-stars">★ {{ shop.rating }}</div>
+                </div>
+                <p class="text-muted small mb-3">{{ shop.description }}</p>
+                <div class="mt-auto">
+                  <a class="btn btn-primary btn-sm w-100" href="{{ url_for('shop_detail', shop_id=shop.id) }}">
+                    View Menu →
+                  </a>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card card-shadow p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h4 class="mb-0">📦 Your Orders</h4>
+          <span class="badge bg-info">{{ orders|length }} orders</span>
+        </div>
+        {% if orders %}
+          <div class="space-y-3">
+            {% for order in orders %}
+              <div class="order-card p-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <strong>{{ order.shop.name }}</strong>
+                    <div class="small-note">Code: {{ order.code }}</div>
+                  </div>
+                  <span class="status-pill status-{{ order.status.lower().replace(' ', '') }}">{{ order.status }}</span>
+                </div>
+                <div class="small-note mb-2">₹{{ order.total_amount }} · {{ order.payment_method }}</div>
+                <div class="small-note mb-2">{{ order.created_at|format_datetime }}</div>
+                <div class="small">
+                  <strong>Items:</strong>
+                  {% for item in order.items %}
+                    <div>{{ item.quantity }} × {{ item.item.name }}</div>
+                  {% endfor %}
+                </div>
+                {% if order.status != 'Delivered' %}
+                  <div class="mt-3 pt-2 border-top">
+                    <strong class="text-primary">Delivery ETA:</strong>
+                    <span id="eta-{{ order.id }}" class="text-muted">{{ order.eta|format_datetime if order.eta else 'Calculating...' }}</span>
+                  </div>
+                {% endif %}
+                <div class="mt-3">
+                  <a href="{{ url_for('track_order', order_id=order.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                    Track Order
+                  </a>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <div class="h1 mb-3">🍽️</div>
+            <h5 class="text-muted">No orders yet</h5>
+            <p class="text-muted small">Start your first order from our premium restaurants</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Auto-refresh ETA every 30 seconds
+setInterval(function() {
+  {% for order in orders %}
+    if ('{{ order.status }}' !== 'Delivered') {
+      fetch('/api/calculate-eta/{{ order.id }}')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('eta-{{ order.id }}').textContent = data.eta_minutes + ' minutes';
+          }
+        });
+    }
+  {% endfor %}
+}, 30000);
+</script>
+{% endblock %}

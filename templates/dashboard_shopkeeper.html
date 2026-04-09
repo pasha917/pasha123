@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-4">
+  <h2>Shopkeeper Dashboard</h2>
+  <p class="small-note">Shop: {{ shop.name if shop else 'No shop assigned' }} · Code: <strong>{{ current_user.tracking_code }}</strong></p>
+  {% if shop and shop.scanner_filename is defined and shop.scanner_filename %}
+    <div class="mt-3">
+      <h6>Shop QR / Scanner</h6>
+      <img src="{{ url_for('static', filename='uploads/' ~ shop.scanner_filename) }}" alt="Shop QR" class="img-fluid rounded" style="max-width: 220px;">
+    </div>
+  {% endif %}
+  {% if shop and (shop.scanner_filename is not defined or not shop.scanner_filename) %}
+    <div class="mt-3 small-note text-muted">No shop QR uploaded yet.</div>
+  {% endif %}
+</div>
+<div class="row gy-4">
+  <div class="col-12">
+    <div class="card card-shadow p-4">
+      <h4>Incoming Orders</h4>
+      {% if orders %}
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead><tr><th>Order Code</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+              {% for order in orders %}
+                <tr>
+                  <td>{{ order.code }}</td>
+                  <td>{{ order.customer.name }}</td>
+                  <td>
+                    <ul class="small-note mb-0 ps-3">
+                      {% for item in order.items %}
+                        <li>{{ item.quantity }} × {{ item.item.name }} (₹{{ item.price }})</li>
+                      {% endfor %}
+                    </ul>
+                  </td>
+                  <td>₹{{ order.total_amount }}</td>
+                  <td>{{ order.payment_method }}</td>
+                  <td><span class="status-pill {{ 'status-new' if order.status=='New' else 'status-accepted' if order.status == 'Accepted' else 'status-onway' if order.status == 'On the way' else 'status-delivered' }}">{{ order.status }}</span></td>
+                  <td>
+                    {% if order.status == 'New' %}
+                      <form method="post" action="{{ url_for('accept_order', order_id=order.id) }}"><button class="btn btn-sm btn-success">Accept</button></form>
+                    {% else %}
+                      <span class="small-note">No action</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p>No active orders yet.</p>
+      {% endif %}
+    </div>
+  <div class="col-12">
+    <div class="card card-shadow p-4">
+      <h4>Manage Items</h4>
+      {% if shop %}
+        <form method="post" action="{{ url_for('add_item') }}" class="mb-3">
+          <div class="row g-2">
+            <div class="col-md-4"><input class="form-control" name="name" placeholder="Item Name" required></div>
+            <div class="col-md-4"><input class="form-control" name="description" placeholder="Description" required></div>
+            <div class="col-md-2"><input type="number" step="0.01" class="form-control" name="price" placeholder="Price" required></div>
+            <div class="col-md-2"><button class="btn btn-primary w-100">Add Item</button></div>
+          </div>
+        </form>
+        {% if items %}
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead><tr><th>Name</th><th>Description</th><th>Price</th><th>Rating</th></tr></thead>
+              <tbody>
+                {% for item in items %}
+                  <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.description }}</td>
+                    <td>₹{{ item.price }}</td>
+                    <td>{{ item.rating }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p>No items added yet. Add some items to start receiving orders.</p>
+        {% endif %}
+      {% else %}
+        <p>No shop assigned. Please contact admin.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
